@@ -1,0 +1,12 @@
+DIY BUDDY
+Version 1.0
+
+Created with the Corona SDK by Ansca Mobile, http://anscamobile.com
+
+Instructions:
+
+* Download Corona SDK, http://anscamobile.com/corona/
+* Open in Corona Simulator to preview on the desktop
+* In the Corona Simulator, choose File > Open for Build... to create an app to install on your device
+* Main app code is in main.lua.  
+* Helper code for button events in ui.lua
