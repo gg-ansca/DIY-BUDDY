@@ -134,9 +134,16 @@ infoBtn.y = cameraBtn.y + cameraBtn.height + 12
 
 function saveImage()
 	print("save image")
-	toolBar.isVisible = false
-	display.captureScreen( true )
+
+	photoScreen.y = photoScreenInitY
+	
+	local savedPhoto = display.captureScreen( true )
+	
 	local alert = native.showAlert( "Success", "Image Saved to Library", { "OK" } )
+	
+	savedPhoto.isVisible = false
+	
+	return true
 end
 
 function fieldHandler( event )
@@ -209,6 +216,8 @@ function startDraw( event )
 				defaultField = native.newTextField( 0, 0, 180, 30, fieldHandler )
 				defaultField.font = native.newFont( "MarkerFelt-Wide", 18 )
 				defaultField:setReferencePoint(display.CenterReferencePoint)
+				
+				native.setKeyboardFocus( defaultField )
 				
 				defaultField.x = viewableScreenW*0.5
 				defaultField.y = 50
