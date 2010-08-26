@@ -1,0 +1,11 @@
+settings =
+{
+        iphone =
+    {
+            plist=
+            {
+                UIPrerenderedIcon=true,
+                UIStatusBarHidden=true
+            },  
+    },
+}
