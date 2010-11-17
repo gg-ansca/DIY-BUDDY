@@ -4,99 +4,43 @@ display.setStatusBar( display.HiddenStatusBar )
 
 local screenW, screenH = display.contentWidth, display.contentHeight
 local viewableScreenW, viewableScreenH = display.viewableContentWidth, display.viewableContentHeight
-local screenOffsetW, screenOffsetH = display.contentWidth -  display.viewableContentWidth, display.contentHeight - display.viewableContentHeight
+local screenOffsetW, screenOffsetH = display.contentWidth - display.viewableContentWidth, display.contentHeight - display.viewableContentHeight
 local toolMode = "lineTool"
 local firstRun = true
-local userPhoto, imgBtn, cameraBtn, infoBtn, defaultField
-
-local background = display.newRect( 0, 0, screenH, screenH )
-background:setFillColor( 255, 255, 255 )
-
-local blackBg = display.newRect( 0, 0, screenH, screenH )
-blackBg:setFillColor( 0, 0, 0 )
-
-local toolBar = display.newGroup()
-local photoScreen = display.newGroup()
-local startScreen = display.newGroup()
-local aboutScreen = display.newGroup()
-
-toolBar.isVisible = false
-photoScreen.isVisible = false
-aboutScreen.isVisible = false
-blackBg.alpha = 0
-
-local photoBg = display.newRect( 0, 0, screenW, screenH )
-photoBg:setFillColor( 0, 0, 0 )
-photoScreen:insert(photoBg)
-
-photoScreen:setReferencePoint(display.CenterReferencePoint)
-photoScreenInitY = photoScreen.y
-
-local aboutScreenBg = display.newImage("about.png")
-aboutScreenBg.x = screenW*0.5 
-aboutScreenBg.y = screenH*0.5
-aboutScreen:insert(aboutScreenBg)
-
-local startScreenBg = display.newImage("start.png")
-startScreenBg.x = screenW*0.5 
-startScreenBg.y = screenH*0.5
-startScreen:insert(startScreenBg)
-startScreen:setReferencePoint(display.CenterReferencePoint)
+local userPhoto, imgBtn, cameraBtn, infoBtn, defaultField, photoScreen, toolBar, startScreen, background, aboutScreen
 
 function showAboutScreen()
 	aboutScreen.y = screenH
 	aboutScreen.isVisible = true
+	photoScreen.isVisible = false
 	transition.to(aboutScreen, {time=400, y=0, transition=easing.outQuad})
 	
 	aboutScreen:addEventListener("touch", backToMain)
 	return true
 end
 
-imgBtn = ui.newButton{
-	default = "buttonBlue.png",
-	over = "buttonBlueOver.png",
-	onRelease = onReleaseBtn,
-	text = "Choose a Photo",
-	emboss = true,
-	size = 18
-}
-startScreen:insert(imgBtn)
-imgBtn.x = screenW*0.5
-imgBtn.y = math.floor(viewableScreenH - 180)
-
-cameraBtn = ui.newButton{
-	default = "buttonBlue.png",
-	over = "buttonBlueOver.png",
-	onRelease = onReleaseBtn,
-	text = "Take a New Photo",
-	emboss = true,
-	size = 18
-}
-startScreen:insert(cameraBtn)
-cameraBtn.x = screenW*0.5
-cameraBtn.y = imgBtn.y + imgBtn.height + 12
-
-infoBtn = ui.newButton{
-	default = "buttonBlue.png",
-	over = "buttonBlueOver.png",
-	onRelease = showAboutScreen,
-	text = "About DIY BUDDY",
-	emboss = true,
-	size = 18
-}
-startScreen:insert(infoBtn)
-infoBtn.x = screenW*0.5
-infoBtn.y = cameraBtn.y + cameraBtn.height + 12
-
-function hideRevealTools()
-	local yValue = photoScreenInitY - 56
-
-	if photoScreen.y ~= photoScreenInitY then
-		yValue = photoScreenInitY
+function hideRevealTools(event)
+	local phase
+	if event then 
+		if event.phase ~= nil then 
+			phase = event.phase
+		else 
+			phase = "ended"
+		end
+	else
+		phase = "ended"
 	end
+
+	if phase == "ended" then
+		local yValue = photoScreenInitY - 56
+
+		if photoScreen.y ~= photoScreenInitY then
+			yValue = photoScreenInitY
+		end
 	
-	transition.to(photoScreen, {time=300, y=yValue, transition=easing.outQuad})
-	
+		transition.to(photoScreen, {time=300, y=yValue, transition=easing.outQuad})
+	end
+
 	return true
 end
 
@@ -108,15 +52,12 @@ function backToMain(event)
 		display.getCurrentStage():setFocus( t )
 		t.isFocus = true
 		
-		if defaultField then defaultField:removeSelf() end
-
 	elseif t.isFocus then
 		if "moved" == phase then
 			
 		elseif "ended" == phase or "cancelled" == phase then
 			display.getCurrentStage():setFocus( nil )
 			t.isFocus = false
-			
 
 			if photoScreen.isVisible then
 				saveImage(true)
@@ -134,24 +75,20 @@ end
 local function onCompleteSave( event )
         if "clicked" == event.action then
                 local i = event.index
-                if 1 == i then
+                if i == 1 then
                 	--Don't save and go back to start screen
-					blackBg:removeEventListener( "touch", startDraw )
+					background:removeEventListener( "touch", startDraw )
 					startScreen.isVisible = true
-					blackBg.alpha = 0 
-					background.alpha = 1
 					startScreen.y = screenH
 					transition.to(startScreen, {time=400, y=screenH*0.5, transition=easing.outQuad, onComplete=function() photoScreen.isVisible = false end})
-                elseif 2 == i then
+                elseif i == 2 then
                     -- Do nothing; dialog will simply dismiss
                     	hideRevealTools()
-                elseif 3 == i then
+                elseif i == 3 then
                 	--Save the image and show the start screen
                 	saveImage()
-					blackBg:removeEventListener( "touch", startDraw )
+					background:removeEventListener( "touch", startDraw )
 					startScreen.isVisible = true
-					blackBg.alpha = 0 
-					background.alpha = 1
 					startScreen.y = screenH
 					transition.to(startScreen, {time=400, y=screenH*0.5, transition=easing.outQuad, onComplete=function() photoScreen.isVisible = false end})
                 end
@@ -172,15 +109,7 @@ function saveImage(options)
 end
 
 function fieldHandler( event )
-
-	if ( "began" == event.phase ) then
-		-- This is the "keyboard has appeared" event
-		-- In some cases you may want to adjust the interface when the keyboard appears.
-	
-	elseif ( "ended" == event.phase ) then
-		-- This event is called when the user stops editing a field: for example, when they touch a different field
-	
-	elseif ( "submitted" == event.phase ) then
+	if ( "submitted" == event.phase  or "ended" == event.phase ) then
 		-- This event occurs when the user presses the "return" key (if available) on the onscreen keyboard
 
 		-- Hide keyboard
@@ -193,11 +122,12 @@ function fieldHandler( event )
 		photoText.x = defaultField.ex
 		photoText.y = defaultField.ey
 
-		defaultField.isVisible = false
+		transition.to(photoScreen.textPanel, { time = 400, y = -textPanel.height*0.5, onComplete = function()
+			photoScreen.textPanel:removeSelf()
+		end })	
 	end
 	
 	return true
-
 end
 
 function startDraw( event )	
@@ -229,28 +159,40 @@ function startDraw( event )
 				photoScreen:insert(myLine)
 			end
 
-		elseif "ended" == phase or "cancelled" == phase then
-		
+		elseif "ended" == phase or "cancelled" == phase then		
 			display.getCurrentStage():setFocus( nil )
 			t.isFocus = false
 
-			if toolMode == "textTool" then			
+			if toolMode == "textTool" then
+				if photoScreen.textPanel then photoScreen.textPanel:removeSelf() end
+
+				local textPanel = display.newGroup()
+				local bg = display.newRect( 0, 0, screenW, 150 )
+				bg:setFillColor(255,255,255)
+				textPanel:insert(bg)
+				local label = display.newText("Enter text", 12, 12, "MarkerFelt-Wide", 18)
+				label:setTextColor(0,0,0)
+				textPanel:insert(label)
+							
 				defaultField = native.newTextField( 0, 0, 180, 30, fieldHandler )
 				defaultField.font = native.newFont( "MarkerFelt-Wide", 18 )
 				defaultField:setReferencePoint(display.CenterReferencePoint)
-				
-				native.setKeyboardFocus( defaultField )
-				
+				textPanel:insert(defaultField)
+								
 				defaultField.x = screenW*0.5
 				defaultField.y = 50
-				
-				defaultField.isVisible = true
-	
+					
 				defaultField.ex = event.x
 				defaultField.ey = event.y
-	
-				display.getCurrentStage():setFocus( nil )
-				t.isFocus = false
+
+				textPanel.y = -textPanel.height*0.5
+
+				transition.to(textPanel, { time = 400, y = textPanel.height*0.5, onComplete = function() 
+					--place the cursor in the text field to cause the keyboard to come up				
+					native.setKeyboardFocus( defaultField )
+				end })
+
+				photoScreen.textPanel = textPanel				
 			end
 									
 		end
@@ -268,26 +210,19 @@ function showTextAlert(event)
 end
 
 function showToolBar() 
-	local toolBgHit = ui.newButton{
-		default = "toolHit.png",
-		onRelease = hideRevealTools
-	}
-	toolBar:insert(toolBgHit)
-	toolBgHit.x = screenW*0.5
-	toolBgHit.y = viewableScreenH - toolBgHit.height*0.5
-
 	local toolBg = display.newRect(0,0, screenW, 60)
 	toolBg:setFillColor(140,140,140)
 	toolBg.y = viewableScreenH - toolBg.height*0.5
 	toolBar:insert(toolBg)	
+	toolBg:addEventListener("touch", hideRevealTools)
 
 	local textBtn = ui.newButton{
 		default = "textBtn.png",
 		over = "textBtn_over.png",
 		onRelease = function() 
-						toolMode="textTool"; 
-						if defaultField then defaultField:removeSelf() end; 
-						showTextAlert(); hideRevealTools(); 
+						toolMode="textTool" 
+						showTextAlert()
+						hideRevealTools()
 					end
 	}
 	toolBar:insert(textBtn)
@@ -299,7 +234,6 @@ function showToolBar()
 		over = "lineBtn_over.png",
 		onRelease = function() 
 						toolMode="lineTool";
-						if defaultField then defaultField:removeSelf() end; 
 						hideRevealTools(); 
 					end
 	}
@@ -335,8 +269,6 @@ function showToolBar()
 	photoBgDropShadow.x = screenW*0.5 
 	photoBgDropShadow.y = viewableScreenH + photoBgDropShadow.height*0.5 
 	photoScreen:insert(photoBgDropShadow)
-
-	timer.performWithDelay(700, hideRevealTools )
 		
 	return true
 end
@@ -347,8 +279,6 @@ function onComplete( event )
 
 	if photo then
 		startScreen.isVisible = false
-		blackBg.alpha =1 
-		background.alpha = 0
 
 		local w = photo.width
 		local h = photo.height
@@ -369,25 +299,23 @@ function onComplete( event )
 
 		userPhoto = photo
 		photoScreen:insert(userPhoto)
-						
-		local toolHit = ui.newButton{
-			default = "toolHit.png",
-			onRelease = hideRevealTools
-		}
-		photoScreen:insert(toolHit)
-		toolHit.x = screenW*0.5
-		toolHit.y = viewableScreenH - toolHit.height*0.5
-	
-		showToolBar()
-		
+
+		local toolBgHitArea = display.newRect(0,0, screenW, 35)
+		toolBgHitArea:setFillColor(0,0,0,0)
+		photoScreen:insert(toolBgHitArea)
+		toolBgHitArea.x = screenW*0.5
+		toolBgHitArea.y = photoScreen.y + photoScreen.height*0.5 - toolBgHitArea.height*0.5
+		toolBgHitArea:addEventListener("touch", hideRevealTools)
+							
 		photoScreen.y = photoScreenInitY - 56
 		
-		blackBg:addEventListener( "touch", startDraw )
+		showToolBar()
+		timer.performWithDelay( 700, hideRevealTools )
+				
+		background:addEventListener( "touch", startDraw )
 	else
-		blackBg:removeEventListener( "touch", startDraw )
+		background:removeEventListener( "touch", startDraw )
 		startScreen.isVisible = true
-		blackBg.alpha = 0 
-		background.alpha = 1
 	end
 	
 end
@@ -410,6 +338,77 @@ function onReleaseBtn( event )
 	return true
 end
 
+local function setupStartScreen()
+	background = display.newRect( 0, 0, screenH, screenH )
+	background:setFillColor( 255, 255, 255 )
 
-imgBtn:addEventListener( "touch", onReleaseBtn )
-cameraBtn:addEventListener( "touch", onReleaseBtn )
+	toolBar = display.newGroup()
+	photoScreen = display.newGroup()
+	startScreen = display.newGroup()
+	aboutScreen = display.newGroup()
+
+	toolBar.isVisible = false
+	photoScreen.isVisible = false
+	aboutScreen.isVisible = false
+
+	local photoBg = display.newRect( 0, 0, screenW, screenH )
+	photoBg:setFillColor( 0, 0, 0 )
+	photoScreen:insert(photoBg)
+
+	photoScreen:setReferencePoint(display.CenterReferencePoint)
+	photoScreenInitY = photoScreen.y
+
+	local aboutScreenBg = display.newImage("about.png")
+	aboutScreenBg.x = screenW*0.5 
+	aboutScreenBg.y = screenH*0.5
+	aboutScreen:insert(aboutScreenBg)
+
+	local startScreenBg = display.newImage("start.png")
+	startScreenBg.x = screenW*0.5 
+	startScreenBg.y = screenH*0.5
+	startScreen:insert(startScreenBg)
+	startScreen:setReferencePoint(display.CenterReferencePoint)
+
+	imgBtn = ui.newButton{
+		default = "buttonBlue.png",
+		over = "buttonBlueOver.png",
+		onRelease = onReleaseBtn,
+		text = "Choose a Photo",
+		emboss = true,
+		size = 18
+	}
+	startScreen:insert(imgBtn)
+	imgBtn.x = screenW*0.5
+	imgBtn.y = math.floor(viewableScreenH - 180)
+
+	cameraBtn = ui.newButton{
+		default = "buttonBlue.png",
+		over = "buttonBlueOver.png",
+		onRelease = onReleaseBtn,
+		text = "Take a New Photo",
+		emboss = true,
+		size = 18
+	}
+	startScreen:insert(cameraBtn)
+	cameraBtn.x = screenW*0.5
+	cameraBtn.y = imgBtn.y + imgBtn.height + 12
+
+	infoBtn = ui.newButton{
+		default = "buttonBlue.png",
+		over = "buttonBlueOver.png",
+		onRelease = showAboutScreen,
+		text = "About DIY BUDDY",
+		emboss = true,
+		size = 18
+	}
+	startScreen:insert(infoBtn)
+	infoBtn.x = screenW*0.5
+	infoBtn.y = cameraBtn.y + cameraBtn.height + 12
+end
+
+function init()	
+	setupStartScreen()	
+end
+
+--start the program!
+init()
