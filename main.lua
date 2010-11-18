@@ -110,10 +110,7 @@ end
 
 function fieldHandler( event )
 	if ( "submitted" == event.phase  or "ended" == event.phase ) then
-		-- This event occurs when the user presses the "return" key (if available) on the onscreen keyboard
-
-		-- Hide keyboard
-		native.setKeyboardFocus( nil )
+		-- This event occurs when the user presses the "return" key on the keyboard
 		
 		local photoText = display.newText(defaultField.text, 0, 0, "MarkerFelt-Wide", 24)
 		photoText:setTextColor( 0, 183, 235 )
@@ -122,9 +119,11 @@ function fieldHandler( event )
 		photoText.x = defaultField.ex
 		photoText.y = defaultField.ey
 
-		transition.to(photoScreen.textPanel, { time = 400, y = -textPanel.height*0.5, onComplete = function()
-			photoScreen.textPanel:removeSelf()
-		end })	
+		defaultField:removeSelf()
+		transition.to(photoScreen.textPanel, { time = 400, y = -photoScreen.textPanel.height*0.5 })	
+
+		-- Hide keyboard
+		native.setKeyboardFocus( nil )
 	end
 	
 	return true
@@ -133,7 +132,9 @@ end
 function startDraw( event )	
 	local t = event.target
 	local phase = event.phase
-
+	print("startDraw phase: ".. phase)
+	print("startDraw toolMode: ".. toolMode)
+	
 	if "began" == phase then
 		display.getCurrentStage():setFocus( t )
 		t.isFocus = true
@@ -142,7 +143,6 @@ function startDraw( event )
 		t.y0 = event.y
 
 		myLine = nil
-
 	elseif t.isFocus then
 		if "moved" == phase then
 			
@@ -164,30 +164,29 @@ function startDraw( event )
 			t.isFocus = false
 
 			if toolMode == "textTool" then
-				if photoScreen.textPanel then photoScreen.textPanel:removeSelf() end
-
 				local textPanel = display.newGroup()
 				local bg = display.newRect( 0, 0, screenW, 150 )
 				bg:setFillColor(255,255,255)
+				bg:setStrokeColor(0, 183, 235 )
+				bg.strokeWidth = 1
 				textPanel:insert(bg)
-				local label = display.newText("Enter text", 12, 12, "MarkerFelt-Wide", 18)
+				local label = display.newText("Enter text", 18, 12, "MarkerFelt-Wide", 18)
 				label:setTextColor(0,0,0)
 				textPanel:insert(label)
 							
-				defaultField = native.newTextField( 0, 0, 180, 30, fieldHandler )
-				defaultField.font = native.newFont( "MarkerFelt-Wide", 18 )
-				defaultField:setReferencePoint(display.CenterReferencePoint)
-				textPanel:insert(defaultField)
-								
-				defaultField.x = screenW*0.5
-				defaultField.y = 50
-					
-				defaultField.ex = event.x
-				defaultField.ey = event.y
-
 				textPanel.y = -textPanel.height*0.5
 
-				transition.to(textPanel, { time = 400, y = textPanel.height*0.5, onComplete = function() 
+				transition.to(textPanel, { time = 400, y = 0, onComplete = function() 
+					defaultField = native.newTextField( 0, 0, screenW-24, 30, fieldHandler )
+					defaultField.font = native.newFont( "MarkerFelt-Wide", 18 )
+					defaultField:setReferencePoint(display.CenterReferencePoint)
+					textPanel:insert(defaultField)
+								
+					defaultField.x = screenW*0.5
+					defaultField.y = 63
+					
+					defaultField.ex = event.x
+					defaultField.ey = event.y
 					--place the cursor in the text field to cause the keyboard to come up				
 					native.setKeyboardFocus( defaultField )
 				end })
